@@ -14,5 +14,5 @@ print("📂 찾은 폴더 ID:", folder_id)
 
 ### 2 ===================================================================
 folder_id = google_drive.get_folder_id('Youtube')
-google_drive.create_folder('한경 글로벌마켓', folder_id)
+# google_drive.create_folder('한경 글로벌마켓', folder_id)
 google_drive.create_folder('매일경제TV', folder_id)

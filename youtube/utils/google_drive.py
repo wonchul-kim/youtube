@@ -12,7 +12,7 @@ class GoogleDrive:
         creds = service_account.Credentials.from_service_account_file(service_account_file, scopes=scopes)
         self.drive_service = build("drive", "v3", credentials=creds)
             
-    def get_folder_id(self, folder_name, parent_folder_id=None, ):
+    def get_folder_id(self, folder_name, parent_folder_id=None):
     
         query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
         if parent_folder_id:
@@ -48,6 +48,7 @@ class GoogleDrive:
 
     def upload(self, filename, content, folder_name):
         folder_id = self.get_folder_id(folder_name)
+        
         assert folder_id is not None, RuntimeError(f"There is no such folder-id for '{folder_name}'")
 
         file_metadata = {
