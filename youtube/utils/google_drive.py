@@ -4,7 +4,8 @@ from google.oauth2 import service_account
 from googleapiclient.http import MediaIoBaseUpload
 
 
-def get_folder_id(folder_name, service_account_file, parent_folder_id=None, scopes = ["https://www.googleapis.com/auth/drive.metadata.readonly"]):
+def get_folder_id(folder_name, service_account_file, parent_folder_id=None, scopes=["https://www.googleapis.com/auth/drive.metadata.readonly",
+                                                                                    "https://www.googleapis.com/auth/drive.file"]):
    
     creds = service_account.Credentials.from_service_account_file(service_account_file, scopes=scopes)
     drive_service = build("drive", "v3", credentials=creds)
@@ -49,3 +50,24 @@ def upload(filename, content, folder_name, service_account_file, scopes = ["http
     
     return True
 
+def create_folder(folder_name, service_account_file, parent_folder_id=None, scopes = ["https://www.googleapis.com/auth/drive.file"]):
+    creds = service_account.Credentials.from_service_account_file(service_account_file, scopes=scopes)
+    drive_service = build("drive", "v3", credentials=creds)
+    
+    folder_id = get_folder_id(folder_name, service_account_file)
+    
+    if folder_id:
+        print(f"📂 폴더 '{folder_name}'가 이미 존재합니다. (ID: {folder_id})")
+    else:
+        file_metadata = {
+            "name": folder_name,
+            "mimeType": "application/vnd.google-apps.folder"
+        }
+        if parent_folder_id:
+            file_metadata["parents"] = [parent_folder_id]
+
+        folder = drive_service.files().create(body=file_metadata, fields="id").execute()
+        folder_id = folder.get("id")
+        print(f"✅ 폴더 '{folder_name}'를 생성했습니다. (ID: {folder_id})")
+
+    return folder_id
