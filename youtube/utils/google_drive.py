@@ -49,16 +49,3 @@ def upload(filename, content, folder_name, service_account_file, scopes = ["http
     
     return True
 
-    
-if __name__ == '__main__':
-    import os
-    from dotenv import load_dotenv    
-    
-    load_dotenv('/HDD/github/youtube/.env')
-    YOUTUBE_SERVICE_ACCOUNT_FILE = os.getenv("YOUTUBE_SERVICE_ACCOUNT_FILE")
-    
-    folder_name = '매일경제tv'
-    folder_id = get_folder_id(folder_name, YOUTUBE_SERVICE_ACCOUNT_FILE)
-    print("📂 찾은 폴더 ID:", folder_id)
-
-
