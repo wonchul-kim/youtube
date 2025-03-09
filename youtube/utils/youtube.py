@@ -42,10 +42,14 @@ def get_youtube_video_data(url, api_key, save_dir=None):
     data = get_youtube_metadata(video_id, api_key)
     data.update({"transcript": get_youtube_transcript(url)})
 
+    title = arrange_title(data)
+    
     if save_dir and osp.exists(save_dir):
         import json 
-        with open(osp.join(save_dir, 'a.json'), "w", encoding="utf-8") as file:
+        with open(osp.join(save_dir, title + '.json'), "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
+        
+        print(f"Saved video data at {osp.join(save_dir, title + '.json')}")
 
     return data
 
@@ -99,3 +103,11 @@ def get_latest_video(url):
         return video_title, video_url
     
     return None
+
+def arrange_title(data):
+    
+    title = data['title'].split("#")[:3]
+    title = [item.strip() for item in title]
+    title = ("_").join(title)
+    
+    return title

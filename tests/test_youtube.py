@@ -1,13 +1,14 @@
 import os
+import os.path as osp
 from dotenv import load_dotenv    
 from youtube.utils.google_drive import GoogleDrive
-from youtube.utils.youtube import get_youtube_video_data, extract_channel_id, get_videos_from_channel
+from youtube.utils.youtube import get_youtube_video_data, extract_channel_id, get_videos_from_channel, arrange_title
 
 load_dotenv('/HDD/github/youtube/.env')
 GOOGLE_CLOUD_API_KEY = os.getenv("GOOGLE_CLOUD_API_KEY")
 YOUTUBE_SERVICE_ACCOUNT_FILE = os.getenv("YOUTUBE_SERVICE_ACCOUNT_FILE")
 
-google_drive = GoogleDrive(YOUTUBE_SERVICE_ACCOUNT_FILE)
+gdrive = GoogleDrive(YOUTUBE_SERVICE_ACCOUNT_FILE)
 
 ## 1 ==================================================================
 # youtube_channel_name = '매일경제TV'
@@ -17,7 +18,7 @@ google_drive = GoogleDrive(YOUTUBE_SERVICE_ACCOUNT_FILE)
 # data = get_youtube_video_data(url, GOOGLE_CLOUD_API_KEY, save_dir)
 # print(data)
 
-# google_drive.upload('abcd', data, youtube_channel_name)
+# gdrive.upload('abcd', data, youtube_channel_name)
 
 
 # ### 2 ==================================================================
@@ -52,7 +53,12 @@ for channel_name, val in youtube_urls.items():
     print(f"THere are {len(videos)} videos")
     
     for video in videos:
-        folder_id = google_drive.get_folder_id(channel_name, 'Youtube')
-        folder_id = google_drive.create_folder(f'{datetime.now().year}/{datetime.now().month}/{datetime.now().day}/{video['title']}', folder_id)
-        data = get_youtube_video_data(video['url'], GOOGLE_CLOUD_API_KEY)
-        print(data)
+        video_data = get_youtube_video_data(video['url'], GOOGLE_CLOUD_API_KEY,
+                                            save_dir='/HDD/etc/youtube/')
+        published_at = video_data['publishedAt']
+        year, month = published_at.split('-')[:2]
+        day = published_at.split('-')[2].split("T")[0]
+        title = arrange_title(video)
+        folder_id = gdrive.create_folder(f'Youtube/{channel_name}/{year}/{month}/{day}')
+        gdrive.upload(title, video_data, folder_id)
+        print(video_data)

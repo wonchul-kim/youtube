@@ -10,7 +10,7 @@ class GoogleDrive:
                          "https://www.googleapis.com/auth/drive.file"]):
         
         creds = service_account.Credentials.from_service_account_file(service_account_file, scopes=scopes)
-        self.drive_service = build("drive", "v3", credentials=creds)
+        self.gdrive = build("drive", "v3", credentials=creds)
             
     def get_folder_id(self, folder_name, parent_folder_id=None):
         query = f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
@@ -20,7 +20,7 @@ class GoogleDrive:
 
         # print(f"📌 Query: {query}")  # 쿼리 출력해서 확인!
 
-        results = self.drive_service.files().list(q=query, fields="files(id, name)").execute()
+        results = self.gdrive.files().list(q=query, fields="files(id, name)").execute()
         folders = results.get("files", [])
 
         if folders:
@@ -32,7 +32,7 @@ class GoogleDrive:
 
     def delete_file_id(self, file_id):
         try:
-            self.drive_service.files().delete(fileId=file_id).execute()
+            self.gdrive.files().delete(fileId=file_id).execute()
             print(f"File {file_id} has been deleted.")
         except Exception as error:
             print(f"An error occurred: {error}")
@@ -43,16 +43,16 @@ class GoogleDrive:
                 id = self.get_folder_id(name)
                 if id is None:
                     break
-                self.drive_service.files().delete(fileId=id).execute()
+                self.gdrive.files().delete(fileId=id).execute()
                 print(f"File {name} has been deleted.")
         except Exception as error:
-            raise RuntimeError(f"An error occurred: {error}")
+            raise RuntimeError(f"An error occurred when deleting {name} : {error}")
 
         
     def create_folder(self, folder_name, parent_folder_id=None):
         
         if len(folder_name.split("/")) > 1:
-            self.get_or_create_folder_by_path(folder_name, parent_folder_id)
+            self.create_multiple_folders(folder_name, parent_folder_id)
  
         folder_id = self.get_folder_id(folder_name, parent_folder_id=parent_folder_id)
         
@@ -66,29 +66,23 @@ class GoogleDrive:
             if parent_folder_id:
                 file_metadata["parents"] = [parent_folder_id]
 
-            folder = self.drive_service.files().create(body=file_metadata, fields="id").execute()
+            folder = self.gdrive.files().create(body=file_metadata, fields="id").execute()
             folder_id = folder.get("id")
             print(f"✅ 폴더 '{folder_name}'를 생성했습니다. (ID: {folder_id})")
 
         return folder_id
 
-    def get_or_create_folder_by_path(self, folder_path, parent_folder_id=None):
-        folders = folder_path.split("/")
-
-        for folder in folders:
-            parent_folder_id = self.create_folder(folder, parent_folder_id) 
-
-        return parent_folder_id
+    def create_multiple_folders(self, folder_path, parent_folder_id=None):
+        dirs = folder_path.split("/")
+        for idx, _dir in enumerate(dirs):
+            folder_id = self.get_folder_id(_dir)
+            if folder_id is None:
+                if idx != 0:
+                    self.create_folder(_dir, self.get_folder_id(dirs[idx - 1]))
+                else:
+                    self.create_folder(_dir, parent_folder_id=parent_folder_id)
     
-    def upload(self, filename, content, folder_name):
-        folder_id = self.get_folder_id(folder_name)
-        
-        assert folder_id is not None, RuntimeError(f"There is no such folder-id for '{folder_name}'")
-
-        file_metadata = {
-            "name": filename,
-            "parents": [folder_id] 
-        }
+    def upload(self, filename, content, folder_id):
         
         if isinstance(content, str):
             file_stream = io.BytesIO(content.encode("utf-8"))
@@ -101,8 +95,12 @@ class GoogleDrive:
             raise NotImplementedError(f"NOT yet implement for {type(content)} type content")
 
         media = MediaIoBaseUpload(file_stream, mimetype="text/plain", resumable=True)
+        file_metadata = {
+            "name": filename,
+            "parents": [folder_id] 
+        }
 
-        uploaded_file = self.drive_service.files().create(body=file_metadata, media_body=media, fields="id").execute()
-        print(f"✅ File({filename}) is SUCCESFULLY uploaded to Google Drive at {folder_name}")
+        uploaded_file = self.gdrive.files().create(body=file_metadata, media_body=media, fields="id").execute()
+        print(f"✅ File({filename}) is SUCCESFULLY uploaded to Google Drive") 
         
         return True
