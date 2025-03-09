@@ -1,8 +1,6 @@
 import os.path as osp
-from datetime import datetime, timedelta 
 import re
 import requests
-from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
 
